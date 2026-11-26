@@ -11,12 +11,14 @@ library(gridExtra)
 library(RColorBrewer)
 library(cowplot)
 library(viridis)
+library(RcppTOML)
 #options(dplyr.print_max = 1e9, pillar.width = Inf)
 
 MHz <- 1000000
 kHz <- 1000
 args <- commandArgs(trailingOnly = TRUE)
-folder <- args[1] 
+config <- parseTOML(args[1])
+folder <- paste0(config$experiment$results_dir, "/", config$experiment$name, "/")
 
 # Assign parameters names according to experiment num
 df <- read.csv(paste(folder, "results.csv", sep=""))
@@ -33,12 +35,12 @@ df <- df %>%
 
 combined_df <- df
 
-# get the last 20 iterations
+# keep the first max_iterations iterations
 combined_df <- combined_df %>%
-	filter(iteration_num < 20)
+	filter(iteration_num < config$plot$max_iterations)
 
 # discard the n first and last results for each benchmark 
-nb_discards <- 10
+nb_discards <- config$plot$discard_samples
 combined_df <- combined_df %>%
 	group_by(iteration_num, expe_num) %>%
 	filter(between(row_number(), nb_discards, n()-nb_discards)) %>%
@@ -64,10 +66,10 @@ get_plot <- function(df_expe) {
 		ungroup()
 	df_expe <- df_expe %>%
 		mutate(
-			clock_source = factor(clock_source, levels = c("HSI", "HSE", "PLL", "XOSC", "ROSC", "LPOSC", "PLL96", "PLL64", "RC_FAST", "XTAL")),
-			vreg_output = factor(vreg_output, levels = c("1.10V", "1.00V", "0.90V","0.85V", "0.80V", "Range1", "Range2", "Range3"))
+			clock_source = factor(clock_source, levels = config$plot$levels$clock_source),
+			vreg_output = factor(vreg_output, levels = config$plot$levels$vreg_output)
 		)
-	bench <- c("prime", "prime_multicores", "mat_mul", "mat_mul_float", "mat_mul_double")
+	bench <- config$plot$levels$benchmark_name
 	myColors <- setNames(viridisLite::viridis(length(bench), end = 0.9), bench)
 	# myColors <- setNames(c("#000000", "#E69F00", "#0072B2", "#009E73", "#D55E00"), bench)
 	p <- ggplot(df_expe , aes(x = current_timestamp, y = power_sample, color=benchmark_name, group=interaction(clock_source, vreg_output, clock_freq, benchmark_name))) +
@@ -75,7 +77,7 @@ get_plot <- function(df_expe) {
 		geom_hline(data=pwr, aes(yintercept = power_median, color = benchmark_name), linetype = "dashed", linewidth = 0.3, alpha = 0.5, show.legend = FALSE) +
 		geom_label_repel(
 			data=pwr,
-			aes(x=Inf, y = power_median, color = benchmark_name, label = sprintf("%.2f mW", power_median)),
+			aes(x=Inf, y = power_median, color = benchmark_name, label = sprintf(config$plot$value_format, power_median)),
 			inherit.aes = FALSE, show.legend = FALSE, hjust=1.15,
 			direction = "y",
 			point.size = NA,
@@ -85,7 +87,7 @@ get_plot <- function(df_expe) {
 		scale_x_continuous(expand = expansion(mult = c(0, 0.4))) +
 		scale_y_continuous(n.breaks=5) +
 		facet_wrap(~interaction(clock_source, vreg_output, clock_freq, sep="|", lex.order = TRUE), ncol = 1, scales = "free", labeller = as_labeller(selective_labeller)) +
-		labs(x = "Timestamp in seconds", y = "Power usage in mW", title = "") +
+		labs(x = config$plot$x_label, y = config$plot$y_label, title = "") +
 		scale_colour_manual(name = "Benchmark name:", values = myColors, breaks=names(myColors), labels = function(x) gsub("_", " ", x)) +
 		guides(color = guide_legend(nrow = 1, byrow = TRUE, title.position = "left", title.hjust = 0.5)) +
 		theme_bw() +
