@@ -17,7 +17,7 @@ end_of_expe = False
 start_time = time.time()
 timing_samples = []
 
-if(len(sys.argv) < 13):
+if(len(sys.argv) < 14):
     print("Missing args")
     exit()
 nb_confs = int(sys.argv[1])
@@ -32,6 +32,7 @@ MAX_CURRENT_UPPER = float(sys.argv[9])
 NUM_CONF_SWITCH = float(sys.argv[10])
 SHUNT_VAL = float(sys.argv[11])
 TIMED_ONLY = bool(int(sys.argv[12]))
+TIME_ONLY_SAMPLES = int(sys.argv[13])
 nb_expes = nb_confs * NB_BENCHMARKS
 
 def next_expe(user_gpio, level, tick):

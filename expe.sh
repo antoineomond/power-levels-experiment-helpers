@@ -17,17 +17,18 @@ NB_BENCHMARKS=$(cfg .measurement.nb_benchmarks)
 OFFSET=$(cfg .measurement.offset)
 ITER_OFFSET=$(cfg .measurement.iter_offset)
 [[ $(cfg .measurement.timed_only) == true ]] && TIMED_ONLY=1 || TIMED_ONLY=0
+TIME_ONLY_SAMPLES=$(cfg .measurement.timed_only_samples)
+SHUNT_VAL=$(cfg .measurement.ina228.shunt_ohms)
 MAX_CURRENT_LOWER=$(cfg .measurement.ina228.max_current_lower)
 MAX_CURRENT_UPPER=$(cfg .measurement.ina228.max_current_upper)
 NUM_CONF_SWITCH=$(cfg .measurement.ina228.num_conf_switch)
-SHUNT_VAL=$(cfg .measurement.ina228.shunt_ohms)
 DEADLINE_ITERATION=0 # unused by the measurement scripts
 
 scp "$(dirname "$0")/$SCRIPT" "$REMOTE_HOST:$REMOTE_DIR/$SCRIPT"
 
 if [[ "$2" != "nomon" ]]; then
 	(ssh "$REMOTE_HOST" "kill \$(pgrep -f $SCRIPT)" || true)
-	ssh "$REMOTE_HOST" "cd $REMOTE_DIR && source $REMOTE_VENV/bin/activate && nohup python -u $SCRIPT $NB_CONFS $NB_ITERS $OFFSET $ITER_OFFSET 0 $NB_BENCHMARKS $DEADLINE_ITERATION $MAX_CURRENT_LOWER $MAX_CURRENT_UPPER $NUM_CONF_SWITCH $SHUNT_VAL $TIMED_ONLY > measurements.log 2>&1 < /dev/null" < /dev/null &
+	ssh "$REMOTE_HOST" "cd $REMOTE_DIR && source $REMOTE_VENV/bin/activate && nohup python -u $SCRIPT $NB_CONFS $NB_ITERS $OFFSET $ITER_OFFSET 0 $NB_BENCHMARKS $DEADLINE_ITERATION $MAX_CURRENT_LOWER $MAX_CURRENT_UPPER $NUM_CONF_SWITCH $SHUNT_VAL $TIMED_ONLY $TIME_ONLY_SAMPLES > measurements.log 2>&1 < /dev/null" < /dev/null &
 	PID=$!
 fi
 
