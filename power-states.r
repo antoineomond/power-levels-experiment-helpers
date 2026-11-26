@@ -24,7 +24,7 @@ folder <- paste0(config$experiment$results_dir, "/", config$experiment$name, "/"
 df <- read.csv(paste(folder, "results.csv", sep=""))
 df <- df %>%
   mutate(config_row = expe_num + 1)
-parameters <- bind_rows(config$experiment$configurations)
+parameters <- read.csv(text = gsub("\\n", "\n", config$experiment$configurations, fixed = TRUE))
 df <- df %>%
 	left_join(
 		parameters %>% mutate(config_row = row_number()),
@@ -36,12 +36,12 @@ combined_df <- df
 
 get_plot <- function(df_expe, summary_cols, group_cols, facet_cols, benchmark_name, color_col, labeller, max_iterations, discard_samples, x_label, y_label, value_format) {
 	# keep the first max_iterations iterations
-	combined_df <- combined_df %>%
+	df_expe <- df_expe %>%
 		filter(iteration_num < max_iterations)
 
 	# discard the n first and last results for each benchmark 
 	nb_discards <- discard_samples
-	combined_df <- combined_df %>%
+	df_expe <- df_expe %>%
 		group_by(iteration_num, expe_num) %>%
 		filter(between(row_number(), nb_discards, n()-nb_discards)) %>%
 		ungroup()
