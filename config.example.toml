@@ -1,0 +1,90 @@
+# Example experiment configuration.
+# Copy it into your project (e.g. expe.toml) and run:  <submodule>/expe.sh expe.toml
+# Relative paths are resolved against the directory containing this file.
+
+[experiment]
+name = "esp32_mat_mul_analysis_sigmetrics_nop_mem"
+results_dir = "results"                  # results go to <results_dir>/<name>/
+# Optional CSV with one row per experiment (row i <-> expe_num i-1), with any
+# columns you like (e.g. clock_source, vreg_output, clock_freq, benchmark_name).
+# It is copied next to results.csv and joined to the measurements when plotting.
+parameters_file = "configurations.csv"
+
+[remote]
+host = "raspberrypi"                     # ssh host of the monitoring device
+dir = "/root/dw_ina"                     # working directory on the device
+venv = "venv"                            # virtualenv inside dir ("" for none)
+
+[measurement]
+script = "measurements.py"               # or "measurements_multicores.py"
+nb_confs = 1
+nb_iters = 3
+nb_benchmarks = 14
+offset = 0                               # if other expes were done before, offset conf numbering
+iter_offset = 0                          # same, for iteration numbering
+timed_only = true                        # sample a fixed number of points instead of following the GPIO trigger
+timed_only_samples = 3000                # ~12s at 250Hz
+
+[measurement.gpio]
+expe_pin = 27
+expe_pin_multicores = 22                 # only used by measurements_multicores.py
+
+[measurement.ina228]
+shunt_ohms = 1.0
+max_current_lower = 0.022                # A
+max_current_upper = 0.022                # A
+num_conf_switch = 20                     # at the END of this conf, switch calibration from lower to upper
+conversion_time_us = 1052                # 50, 84, 150, 280, 540, 1052, 2074 or 4120
+averaging_count = 1                      # 1, 4, 16, 64, 128, 256, 512 or 1024
+adc_range = 0
+shunt_tempco = 25
+temp_comp = 1
+
+[plot]
+max_iterations = 20                      # keep iteration_num < max_iterations
+discard_samples = 10                     # drop the first/last N samples of each (iteration, expe)
+x = "current_timestamp"
+y = "power_sample"
+x_label = "Timestamp in seconds"
+y_label = "Power usage in mW"
+value_format = "%.2f mW"                 # label of the median line
+color = "benchmark_name"                 # one line per value of this column
+facets = ["clock_source", "vreg_output", "clock_freq"]  # one panel per combination
+legend = false
+width = 4                                # inches
+facet_height = 2.5                       # inches per panel
+
+# Display name of each facet column in the panel titles
+[plot.facet_labels]
+clock_source = "Clk source"
+vreg_output = "VREG"
+clock_freq = "Freq"
+
+# Optional value formatting: "hz" turns 150000000 into "150MHz"
+[plot.formats]
+clock_freq = "hz"
+
+# Optional ordering of values (values not listed are appended after)
+[plot.levels]
+clock_source = ["HSI", "HSE", "PLL", "XOSC", "ROSC", "LPOSC", "PLL96", "PLL64", "RC_FAST", "XTAL"]
+vreg_output = ["1.10V", "1.00V", "0.90V", "0.85V", "0.80V", "Range1", "Range2", "Range3"]
+benchmark_name = ["prime", "prime_multicores", "mat_mul", "mat_mul_float", "mat_mul_double"]
+
+# One PDF per output. Any [plot] key can be overridden per output.
+# `filter` is an R expression evaluated with dplyr::filter.
+[[plot.outputs]]
+name = "combined"
+
+[[plot.outputs]]
+name = "baseline"
+filter = '''
+  (clock_source == "PLL"  & vreg_output == "1.10V" & clock_freq %/% 1e6 == 150) |
+  (clock_source == "ROSC" & vreg_output == "1.10V" & clock_freq %/% 1e6 == 10) |
+  (clock_source == "XOSC" & vreg_output == "1.10V" & clock_freq %/% 1e6 == 12)
+'''
+
+# [[plot.outputs]]
+# name = "current"
+# y = "current_sample"
+# y_label = "Current in mA"
+# value_format = "%.2f mA"
