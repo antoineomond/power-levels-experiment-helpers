@@ -3,7 +3,7 @@
 # Relative paths are resolved against the directory containing this file.
 
 [experiment]
-name = "esp32_mat_mul_analysis_sigmetrics_nop_mem"
+name = "pico2"
 results_dir = "results"                  # results go to <results_dir>/<name>/
 # Optional CSV with one row per experiment (row i <-> expe_num i-1), with any
 # columns you like (e.g. clock_source, vreg_output, clock_freq, benchmark_name).

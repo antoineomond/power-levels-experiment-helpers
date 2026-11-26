@@ -32,7 +32,6 @@ df <- df %>%
 	) %>%
 	select(-config_row)
 
-
 combined_df <- df
 
 # keep the first max_iterations iterations
@@ -45,18 +44,6 @@ combined_df <- combined_df %>%
 	group_by(iteration_num, expe_num) %>%
 	filter(between(row_number(), nb_discards, n()-nb_discards)) %>%
 	ungroup()
-
-
-selective_labeller <- function(value) {
-	labels <- stringr::str_split_fixed(value, "\\|", 3)
-	freq_mhz <- as.numeric(labels[, 3])
-	freq_string <- ifelse(
-		freq_mhz/1000000 < 1,
-		paste0(round(freq_mhz/1000, 2), "kHz"),
-		paste0(round(freq_mhz/1000000, 2), "MHz")
-	)
-	paste0("Clk source: **", labels[, 1], "**, Freq: **", freq_string, "**, VREG: **", labels[, 2], "**")
-}
 
 get_plot <- function(df_expe, summary_cols, group_cols, facet_cols, color_col, labeller, ...) {
 	# compute power outside to prevent duplicate values

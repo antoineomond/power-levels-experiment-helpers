@@ -1,5 +1,16 @@
 source("power-states.r")
 
+selective_labeller <- function(value) {
+	labels <- stringr::str_split_fixed(value, "\\|", 3)
+	freq_mhz <- as.numeric(labels[, 3])
+	freq_string <- ifelse(
+		freq_mhz/1000000 < 1,
+		paste0(round(freq_mhz/1000, 2), "kHz"),
+		paste0(round(freq_mhz/1000000, 2), "MHz")
+	)
+	paste0("Clk source: **", labels[, 1], "**, Freq: **", freq_string, "**, VREG: **", labels[, 2], "**")
+}
+
 cp <- get_plot(combined_df,
 	summary_cols = c("clock_source", "vreg_output", "clock_freq", "benchmark_name"),
 	group_cols = c("clock_source", "vreg_output", "clock_freq", "benchmark_name"),
