@@ -58,21 +58,18 @@ selective_labeller <- function(value) {
 	paste0("Clk source: **", labels[, 1], "**, Freq: **", freq_string, "**, VREG: **", labels[, 2], "**")
 }
 
-get_plot <- function(df_expe) {
+get_plot <- function(df_expe, summary_cols, group_cols, facet_cols, ...) {
 	# compute power outside to prevent duplicate values
 	pwr <- df_expe %>%
-		group_by(clock_source, vreg_output, clock_freq, benchmark_name) %>%
+		group_by(across(all_of(summary_cols))) %>%
 		summarise(power_median = median(power_sample, na.rm = TRUE), mtimestamp = max(current_timestamp, na.rm = TRUE)) %>%
 		ungroup()
 	df_expe <- df_expe %>%
-		mutate(
-			clock_source = factor(clock_source, levels = config$plot$levels$clock_source),
-			vreg_output = factor(vreg_output, levels = config$plot$levels$vreg_output)
-		)
+		mutate(...)
 	bench <- config$plot$levels$benchmark_name
 	myColors <- setNames(viridisLite::viridis(length(bench), end = 0.9), bench)
 	# myColors <- setNames(c("#000000", "#E69F00", "#0072B2", "#009E73", "#D55E00"), bench)
-	p <- ggplot(df_expe , aes(x = current_timestamp, y = power_sample, color=benchmark_name, group=interaction(clock_source, vreg_output, clock_freq, benchmark_name))) +
+	p <- ggplot(df_expe , aes(x = current_timestamp, y = power_sample, color=benchmark_name, group=interaction(!!!syms(group_cols)))) +
 		geom_line(na.rm = TRUE, key_glyph = "rect") +
 		geom_hline(data=pwr, aes(yintercept = power_median, color = benchmark_name), linetype = "dashed", linewidth = 0.3, alpha = 0.5, show.legend = FALSE) +
 		geom_label_repel(
@@ -86,7 +83,7 @@ get_plot <- function(df_expe) {
 		) +
 		scale_x_continuous(expand = expansion(mult = c(0, 0.4))) +
 		scale_y_continuous(n.breaks=5) +
-		facet_wrap(~interaction(clock_source, vreg_output, clock_freq, sep="|", lex.order = TRUE), ncol = 1, scales = "free", labeller = as_labeller(selective_labeller)) +
+		facet_wrap(vars(interaction(!!!syms(facet_cols), sep="|", lex.order = TRUE)), ncol = 1, scales = "free", labeller = as_labeller(selective_labeller)) +
 		labs(x = config$plot$x_label, y = config$plot$y_label, title = "") +
 		scale_colour_manual(name = "Benchmark name:", values = myColors, breaks=names(myColors), labels = function(x) gsub("_", " ", x)) +
 		guides(color = guide_legend(nrow = 1, byrow = TRUE, title.position = "left", title.hjust = 0.5)) +
