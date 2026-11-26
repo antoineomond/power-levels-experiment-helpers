@@ -24,7 +24,7 @@ folder <- paste0(config$experiment$results_dir, "/", config$experiment$name, "/"
 df <- read.csv(paste(folder, "results.csv", sep=""))
 df <- df %>%
   mutate(config_row = expe_num + 1)
-parameters <- read.csv(paste(folder, "configurations.csv", sep=""))
+parameters <- bind_rows(config$experiment$configurations)
 df <- df %>%
 	left_join(
 		parameters %>% mutate(config_row = row_number()),
@@ -34,26 +34,24 @@ df <- df %>%
 
 combined_df <- df
 
-# keep the first max_iterations iterations
-combined_df <- combined_df %>%
-	filter(iteration_num < config$plot$max_iterations)
+get_plot <- function(df_expe, summary_cols, group_cols, facet_cols, benchmark_name, color_col, labeller, max_iterations, discard_samples, x_label, y_label, value_format) {
+	# keep the first max_iterations iterations
+	combined_df <- combined_df %>%
+		filter(iteration_num < max_iterations)
 
-# discard the n first and last results for each benchmark 
-nb_discards <- config$plot$discard_samples
-combined_df <- combined_df %>%
-	group_by(iteration_num, expe_num) %>%
-	filter(between(row_number(), nb_discards, n()-nb_discards)) %>%
-	ungroup()
-
-get_plot <- function(df_expe, summary_cols, group_cols, facet_cols, color_col, labeller, ...) {
+	# discard the n first and last results for each benchmark 
+	nb_discards <- discard_samples
+	combined_df <- combined_df %>%
+		group_by(iteration_num, expe_num) %>%
+		filter(between(row_number(), nb_discards, n()-nb_discards)) %>%
+		ungroup()
+	
 	# compute power outside to prevent duplicate values
 	pwr <- df_expe %>%
 		group_by(across(all_of(summary_cols))) %>%
 		summarise(power_median = median(power_sample, na.rm = TRUE), mtimestamp = max(current_timestamp, na.rm = TRUE)) %>%
 		ungroup()
-	df_expe <- df_expe %>%
-		mutate(...)
-	bench <- config$plot$levels$benchmark_name
+	bench <- benchmark_name
 	myColors <- setNames(viridisLite::viridis(length(bench), end = 0.9), bench)
 	# myColors <- setNames(c("#000000", "#E69F00", "#0072B2", "#009E73", "#D55E00"), bench)
 	p <- ggplot(df_expe , aes(x = current_timestamp, y = power_sample, color=!!sym(color_col), group=interaction(!!!syms(group_cols)))) +
@@ -61,7 +59,7 @@ get_plot <- function(df_expe, summary_cols, group_cols, facet_cols, color_col, l
 		geom_hline(data=pwr, aes(yintercept = power_median, color = !!sym(color_col)), linetype = "dashed", linewidth = 0.3, alpha = 0.5, show.legend = FALSE) +
 		geom_label_repel(
 			data=pwr,
-			aes(x=Inf, y = power_median, color = !!sym(color_col), label = sprintf(config$plot$value_format, power_median)),
+			aes(x=Inf, y = power_median, color = !!sym(color_col), label = sprintf(value_format, power_median)),
 			inherit.aes = FALSE, show.legend = FALSE, hjust=1.15,
 			direction = "y",
 			point.size = NA,
@@ -71,7 +69,7 @@ get_plot <- function(df_expe, summary_cols, group_cols, facet_cols, color_col, l
 		scale_x_continuous(expand = expansion(mult = c(0, 0.4))) +
 		scale_y_continuous(n.breaks=5) +
 		facet_wrap(vars(interaction(!!!syms(facet_cols), sep="|", lex.order = TRUE)), ncol = 1, scales = "free", labeller = as_labeller(labeller)) +
-		labs(x = config$plot$x_label, y = config$plot$y_label, title = "") +
+		labs(x = x_label, y = y_label, title = "") +
 		scale_colour_manual(name = "Benchmark name:", values = myColors, breaks=names(myColors), labels = function(x) gsub("_", " ", x)) +
 		guides(color = guide_legend(nrow = 1, byrow = TRUE, title.position = "left", title.hjust = 0.5)) +
 		theme_bw() +

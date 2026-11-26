@@ -4,6 +4,28 @@
 [experiment]
 name = "pico2"
 results_dir = "results"                  # results go to <results_dir>/<name>/
+configurations = [                       # one row per experiment: row i <-> expe_num i-1
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "prime", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "mat_mul", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "mat_mul_float", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "mat_mul_double", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "prime", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "mat_mul", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "mat_mul_float", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "mat_mul_double", benchmark_size = 5000, clock_freq = 1000000 },
+	{ clock_source = "RC_FAST", vreg_output = "1.10V", benchmark_name = "prime", benchmark_size = 5000, clock_freq = 8000000 },
+	{ clock_source = "RC_FAST", vreg_output = "1.10V", benchmark_name = "mat_mul", benchmark_size = 5000, clock_freq = 8000000 },
+	{ clock_source = "RC_FAST", vreg_output = "1.10V", benchmark_name = "mat_mul_float", benchmark_size = 5000, clock_freq = 8000000 },
+	{ clock_source = "RC_FAST", vreg_output = "1.10V", benchmark_name = "mat_mul_double", benchmark_size = 5000, clock_freq = 8000000 },
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "prime", benchmark_size = 5000, clock_freq = 64000000 },
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "mat_mul", benchmark_size = 5000, clock_freq = 64000000 },
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "mat_mul_float", benchmark_size = 5000, clock_freq = 64000000 },
+	{ clock_source = "PLL64", vreg_output = "1.10V", benchmark_name = "mat_mul_double", benchmark_size = 5000, clock_freq = 64000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "prime", benchmark_size = 5000, clock_freq = 96000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "mat_mul", benchmark_size = 5000, clock_freq = 96000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "mat_mul_float", benchmark_size = 5000, clock_freq = 96000000 },
+	{ clock_source = "PLL96", vreg_output = "1.10V", benchmark_name = "mat_mul_double", benchmark_size = 5000, clock_freq = 96000000 },
+]
 
 [remote]
 host = "raspberrypi"                     # ssh host of the monitoring device
@@ -25,22 +47,3 @@ shunt_ohms = 1.0
 max_current_lower = 0.022                # A
 max_current_upper = 0.022                # A
 num_conf_switch = 20                     # at the END of this conf, switch calibration from lower to upper
-
-[plot]
-max_iterations = 20                      # keep iteration_num < max_iterations
-discard_samples = 10                     # drop the first/last N samples of each (iteration, expe)
-x_label = "Timestamp in seconds"
-y_label = "Power usage in mW"
-value_format = "%.2f mW"                 # label of the median line
-
-# Display name of each facet column in the panel titles
-[plot.facet_labels]
-clock_source = "Clk source"
-vreg_output = "VREG"
-clock_freq = "Freq"
-
-# Optional ordering of values (values not listed are appended after)
-[plot.levels]
-clock_source = ["HSI", "HSE", "PLL", "XOSC", "ROSC", "LPOSC", "PLL96", "PLL64", "RC_FAST", "XTAL"]
-vreg_output = ["1.10V", "1.00V", "0.90V", "0.85V", "0.80V", "Range1", "Range2", "Range3"]
-benchmark_name = ["prime", "prime_multicores", "mat_mul", "mat_mul_float", "mat_mul_double"]
